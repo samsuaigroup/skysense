@@ -2,8 +2,9 @@ import logging
 import pickle
 import asyncio
 from aiogram import Bot, Dispatcher, types
-
-API_TOKEN = '8394417314:AAEbUtl8rR_OyyDrA7imDhA9ec5HgDLUWnY'
+import os
+from dotenv import load_dotenv 
+API_TOKEN = os.getenv('BOT_TOKEN')
 
 with open('skysense.pkl', 'rb') as f:
     pipeline_loaded = pickle.load(f)
@@ -41,3 +42,4 @@ async def main():
 
 if __name__ == "__main__":
     asyncio.run(main())
+

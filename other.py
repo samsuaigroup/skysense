@@ -49,11 +49,11 @@ if st.button("Bashorat qilish", type="primary"):
         
         # Add interpretation
         if prediction < 12:
-            st.info("🌱 Havo sifati yaxshi")
+            st.info("🌱 Safe (Xavfsiz)")
         elif prediction < 35.4:
-            st.warning("⚠️ Havo sifati o'rtacha")
+            st.warning("⚠️ Moderate (O‘rtacha xavf)")
         elif prediction < 55.4:
-            st.error("⚠️⚠️ Havo sifati sezilarli darajada ifloslangan")
+            st.error("⚠️⚠️ Dangerous (Yuqori xavf)")
         else:
             st.error("🚨 Havo sifati juda yomon")
             
@@ -62,3 +62,4 @@ if st.button("Bashorat qilish", type="primary"):
 
 st.markdown("---")
 st.caption("SkySense - Sun'iy intellekt yordamida havo sifatini bashorat qilish tizimi")
+

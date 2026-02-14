@@ -1,56 +1,64 @@
-import logging
+import streamlit as st
 import pickle
-import asyncio
-from aiogram import Bot, Dispatcher, types
-from aiogram.filters import Command  # Add this import
+import numpy as np
 import os
-from dotenv import load_dotenv 
-
-# Load environment variables
-load_dotenv()
-API_TOKEN = os.getenv('BOT_TOKEN')
+from dotenv import load_dotenv
 
 # Load the model
-with open('skysense.pkl', 'rb') as f:
-    pipeline_loaded = pickle.load(f)
+@st.cache_resource
+def load_model():
+    with open('skysense.pkl', 'rb') as f:
+        return pickle.load(f)
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
+st.set_page_config(
+    page_title="SkySense - PM2.5 Predictor",
+    page_icon="🌍"
+)
 
-# Initialize bot and dispatcher
-bot = Bot(token=API_TOKEN)
-dp = Dispatcher()
+st.title("🌍 SkySense - Toshkent Havo Sifati Bashorati")
+st.markdown("---")
 
-# Register handlers
-@dp.message(Command(commands=['start', 'help']))
-async def send_welcome(message: types.Message):
-    await message.reply(
-        "Assalamu alaykum! Bu bot orqali Toshkent havosini zararlanish darajasi(PM2.5)ni sun'iy intellekt model orqali bashorat qilishingiz mumkin!\n\n"
-        "Iltimos AQI indeksi, harorat, namlik qiymatlarini vergul bilan ajratilgan holatda kiriting.\n\n"
-        "Masalan 0.1,0.2,0.3"
-    )
+# Load model
+model = load_model()
 
-@dp.message()
-async def predict_pm25(message: types.Message):
+st.subheader("PM2.5 bashorati uchun ma'lumotlarni kiriting")
+st.write("AQI indeksi, harorat va namlik qiymatlarini kiriting")
+
+# Create input fields
+col1, col2, col3 = st.columns(3)
+
+with col1:
+    aqi = st.number_input("AQI indeksi", value=0.0, step=0.1, format="%.2f")
+
+with col2:
+    temperature = st.number_input("Harorat (°C)", value=0.0, step=0.1, format="%.2f")
+
+with col3:
+    humidity = st.number_input("Namlik (%)", value=0.0, step=0.1, format="%.2f")
+
+if st.button("Bashorat qilish", type="primary"):
     try:
-        x = message.text.split(',')
-        # Validate input length
-        if len(x) != 3:
-            await message.answer("Iltimos, 3 ta qiymat kiriting: AQI, harorat, namlik (vergul bilan ajratilgan)")
-            return
+        # Prepare input
+        X_test = [[aqi, temperature, humidity]]
+        
+        # Make prediction
+        prediction = model.predict(X_test)[0]
+        
+        # Display result
+        st.success(f"📊 Bashorat qilingan PM2.5: **{prediction:.2f}**")
+        
+        # Add interpretation
+        if prediction < 12:
+            st.info("🌱 Havo sifati yaxshi")
+        elif prediction < 35.4:
+            st.warning("⚠️ Havo sifati o'rtacha")
+        elif prediction < 55.4:
+            st.error("⚠️⚠️ Havo sifati sezilarli darajada ifloslangan")
+        else:
+            st.error("🚨 Havo sifati juda yomon")
             
-        x_test = [[float(x[0]), float(x[1]), float(x[2])]]
-        prediction = pipeline_loaded.predict(x_test)
-        await message.answer(f"Predicted PM2.5: {prediction[0]:.2f}")
-    except ValueError:
-        await message.answer("Xatolik! Iltimos, faqat sonlarni kiriting. Masalan: 0.1,0.2,0.3")
     except Exception as e:
-        await message.answer("Xatolik yuz berdi! Iltimos, formatga e'tibor bering: 0.1,0.2,0.3")
-        logging.error(f"Error: {e}")
+        st.error(f"Xatolik yuz berdi: {e}")
 
-# Start polling
-async def main():
-    await dp.start_polling(bot)
-
-if __name__ == "__main__":
-    asyncio.run(main())
+st.markdown("---")
+st.caption("SkySense - Sun'iy intellekt yordamida havo sifatini bashorat qilish tizimi")
